@@ -14,6 +14,7 @@ import (
 	"github.com/wang-yongliang/application-launcher/etc"
 	"github.com/wang-yongliang/application-launcher/mqtt"
 	"github.com/wang-yongliang/application-launcher/persistence"
+	"github.com/wang-yongliang/application-launcher/rpc"
 	"github.com/wang-yongliang/application-launcher/server"
 	"github.com/wang-yongliang/application-launcher/token"
 	"github.com/wang-yongliang/application-launcher/version"
@@ -55,6 +56,12 @@ type ApplicationBuilder struct {
 
 	mqttEnable  bool
 	mqttOptions []mqtt.ClientOption
+
+	rpcCilentEnable bool
+	rpcClientOpts   []rpc.RpcClientOptions
+	rpcServerEnable bool
+	rpcServerOpts   []rpc.RpcServerOptions
+	rpcMethods      []any
 
 	// other components
 	componentsBeforeWebServer []func(ctx context.Context) (err error)
@@ -171,5 +178,23 @@ func (h *ApplicationBuilder) EnableTokenValidator(builder TokenValidatorBuilder)
 
 func (h *ApplicationBuilder) PrintVersion() *ApplicationBuilder {
 	version.Print()
+	return h
+}
+
+func (h *ApplicationBuilder) EnableRpcClient(rpcOpts ...rpc.RpcClientOptions) *ApplicationBuilder {
+	h.rpcCilentEnable = true
+	h.rpcClientOpts = append(h.rpcClientOpts, rpcOpts...)
+	return h
+}
+
+// 默认80端口
+func (h *ApplicationBuilder) EnableRpcServer(rpcOpts ...rpc.RpcServerOptions) *ApplicationBuilder {
+	h.rpcServerEnable = true
+	h.rpcServerOpts = append(h.rpcServerOpts, rpcOpts...)
+	return h
+}
+
+func (h *ApplicationBuilder) RegisterRpcMethods(methods ...any) *ApplicationBuilder {
+	h.rpcMethods = append(h.rpcMethods, methods...)
 	return h
 }

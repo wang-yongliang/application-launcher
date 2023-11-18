@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	rpc2 "net/rpc"
+
 	shutdown "github.com/lishimeng/go-app-shutdown"
 	"github.com/wang-yongliang/application-launcher/amqp"
 	"github.com/wang-yongliang/application-launcher/application/api"
@@ -12,6 +14,7 @@ import (
 	"github.com/wang-yongliang/application-launcher/factory"
 	"github.com/wang-yongliang/application-launcher/midware/auth"
 	"github.com/wang-yongliang/application-launcher/mqtt"
+	"github.com/wang-yongliang/application-launcher/rpc"
 	"github.com/wang-yongliang/application-launcher/server"
 	"github.com/wang-yongliang/application-launcher/token"
 )
@@ -135,6 +138,28 @@ func (h *application) _start(buildHandler func(ctx context.Context, builder *App
 		if err != nil {
 			return
 		}
+	}
+
+	if h.builder.rpcServerEnable {
+		for _, m := range h.builder.rpcMethods {
+			err = rpc2.Register(m)
+			if err != nil {
+				return
+			}
+		}
+		err = rpc.NewServer(factory.GetCtx(), h.builder.rpcServerOpts...)
+		if err != nil {
+			return
+		}
+	}
+
+	if h.builder.rpcCilentEnable {
+		var session rpc.Session
+		session, err = rpc.NewClient(factory.GetCtx(), h.builder.rpcClientOpts...)
+		if err != nil {
+			return
+		}
+		factory.RegisterRpc(session)
 	}
 
 	err = h.applyComponents(h.builder.componentsAfterWebServer)

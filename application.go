@@ -8,6 +8,7 @@ import (
 	"github.com/wang-yongliang/application-launcher/factory"
 	"github.com/wang-yongliang/application-launcher/mqtt"
 	"github.com/wang-yongliang/application-launcher/persistence"
+	"github.com/wang-yongliang/application-launcher/rpc"
 )
 
 type Application interface {
@@ -33,5 +34,10 @@ func GetNamedOrm(aliaName string) *persistence.OrmContext {
 
 func GetCache() (c cache.C) {
 	c = factory.GetCache()
+	return
+}
+
+func GetRpc() (session rpc.Session) {
+	session = factory.GetRpc()
 	return
 }

@@ -8,12 +8,14 @@ import (
 	"github.com/wang-yongliang/application-launcher/cache"
 	"github.com/wang-yongliang/application-launcher/mqtt"
 	"github.com/wang-yongliang/application-launcher/persistence"
+	"github.com/wang-yongliang/application-launcher/rpc"
 )
 
 const (
 	amqpKey  = "amqp_session"
 	cacheKey = "cache_redis"
 	mqttKey  = "mqtt_redis"
+	rpcKey   = "rpc_redis"
 )
 
 var globalContext context.Context
@@ -74,4 +76,17 @@ func GetOrm() *persistence.OrmContext {
 }
 func GetNamedOrm(aliaName string) *persistence.OrmContext {
 	return persistence.NewOrm(aliaName)
+}
+
+func RegisterRpc(session rpc.Session) {
+	Add(&session, rpcKey)
+}
+
+func GetRpc() (session rpc.Session) {
+	err := Get(&session, rpcKey)
+	if err != nil {
+		log.Debug(err)
+		session = nil
+	}
+	return
 }
