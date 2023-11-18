@@ -3,7 +3,9 @@ package app
 import (
 	"context"
 	"testing"
+	"time"
 
+	shutdown "github.com/lishimeng/go-app-shutdown"
 	"github.com/wang-yongliang/application-launcher/rpc"
 )
 
@@ -26,6 +28,9 @@ func (m *Math) Multiply(args *Args, reply *int) error {
 	return nil
 }
 func TestServer(t *testing.T) {
+	time.AfterFunc(time.Second*20, func() {
+		shutdown.Exit("bye bye")
+	})
 	t.Log("start app")
 	_ = New().Start(func(ctx context.Context, builder *ApplicationBuilder) error {
 

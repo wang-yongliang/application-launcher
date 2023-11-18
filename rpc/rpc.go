@@ -25,17 +25,20 @@ type BaseRpc struct {
 	ctx        context.Context
 }
 
-func (r *BaseRpc) ListenClose() {
-	select {
-	case <-r.ctx.Done():
-		if r.listener != nil {
-			r.listener.Close()
+func (r *BaseRpc) listenExit() {
+	for {
+		select {
+		case <-r.ctx.Done():
+			if r.listener != nil {
+				log.Debug("close rpc listener")
+				r.listener.Close()
+			}
+			if r.client != nil {
+				log.Debug("close rpc client")
+				r.client.Close()
+			}
+			return
 		}
-		if r.client != nil {
-			r.client.Close()
-		}
-	default:
-		return
 	}
 }
 
@@ -57,6 +60,7 @@ func (r *BaseRpc) InitServer() (err error) {
 	}
 	log.Info("RPC Server is listening on port %s...", r.serverConn.address)
 	go func() {
+		defer r.listener.Close()
 		conn, err := r.listener.Accept()
 		if err != nil {
 			log.Debug("Accept error:", err)
