@@ -69,7 +69,6 @@ func NewClient(ctx context.Context, rpcOpts ...RpcClientOptions) (session Sessio
 		log.Debug("rpc init client error: %s", err.Error())
 		return
 	}
-	go baseRpc.listenExit()
 	session = &baseRpc
 	return
 }
@@ -91,7 +90,6 @@ func NewServer(ctx context.Context, rpcOpts ...RpcServerOptions) (err error) {
 	if err != nil {
 		log.Debug("rpc init server error: %s", err.Error())
 	}
-	go baseRpc.listenExit()
 	return
 }
 

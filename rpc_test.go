@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	rpc2 "net/rpc"
+
 	shutdown "github.com/lishimeng/go-app-shutdown"
 	"github.com/wang-yongliang/application-launcher/rpc"
 )
@@ -27,8 +29,9 @@ func (m *Math) Multiply(args *Args, reply *int) error {
 	*reply = args.A * args.B
 	return nil
 }
+
 func TestServer(t *testing.T) {
-	time.AfterFunc(time.Second*20, func() {
+	time.AfterFunc(time.Second*10, func() {
 		shutdown.Exit("bye bye")
 	})
 	t.Log("start app")
@@ -48,6 +51,23 @@ func TestServer(t *testing.T) {
 					return
 				}
 				t.Logf("Math: %d*%d=%d\n", args.A, args.B, reply)
+
+				_, err = rpc2.Dial("tcp", "127.0.0.1:1234")
+				if err != nil {
+					t.Log("Call error:", err)
+					return
+				}
+				_, err = rpc2.Dial("tcp", "127.0.0.1:1234")
+				if err != nil {
+					t.Log("Call error:", err)
+					return
+				}
+				_, err = rpc2.Dial("tcp", "127.0.0.1:1234")
+				if err != nil {
+					t.Log("Call error:", err)
+					return
+				}
+
 				return
 			})
 		return nil

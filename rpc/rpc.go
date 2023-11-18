@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/rpc"
+	"net/rpc/jsonrpc"
 
 	"github.com/lishimeng/go-log"
 )
@@ -25,53 +26,6 @@ type BaseRpc struct {
 	ctx        context.Context
 }
 
-func (r *BaseRpc) listenExit() {
-	for {
-		select {
-		case <-r.ctx.Done():
-			if r.listener != nil {
-				log.Debug("close rpc listener")
-				r.listener.Close()
-			}
-			if r.client != nil {
-				log.Debug("close rpc client")
-				r.client.Close()
-			}
-			return
-		}
-	}
-}
-
-func (r *BaseRpc) InitClient() (err error) {
-	r.client, err = rpc.Dial(r.clientConn.network, r.clientConn.address)
-	if err != nil {
-		log.Debug("Dial error:", err)
-		return err
-	}
-	log.Info("RPC Client is connected to %s...", r.clientConn.address)
-	return nil
-}
-
-func (r *BaseRpc) InitServer() (err error) {
-	r.listener, err = net.Listen(r.serverConn.network, r.serverConn.address)
-	if err != nil {
-		log.Debug("Listen error:", err)
-		return err
-	}
-	log.Info("RPC Server is listening on port %s...", r.serverConn.address)
-	go func() {
-		defer r.listener.Close()
-		conn, err := r.listener.Accept()
-		if err != nil {
-			log.Debug("Accept error:", err)
-			return
-		}
-		log.Info("RPC Server is connected by %s...", conn.RemoteAddr())
-		rpc.ServeConn(conn)
-	}()
-	return
-}
-
 func (r *BaseRpc) Call(serviceMethod string, args any, reply any) (err error) {
 	return r.client.Call(serviceMethod, args, reply)
 }
@@ -81,24 +35,50 @@ func (r *BaseRpc) Go(serviceMethod string, args any, reply any, done interface{}
 	return call
 }
 
-// func a() {
-// 	arith := new(Math)
-// 	rpc.Register(arith)
+func (r *BaseRpc) InitClient() (err error) {
+	r.client, err = jsonrpc.Dial(r.clientConn.network, r.clientConn.address)
+	if err != nil {
+		log.Debug("Dial error:", err)
+		return
+	}
+	log.Info("RPC Client is connected to %s...", r.clientConn.address)
+	go func() {
+		defer r.client.Close()
+		<-r.ctx.Done()
+		log.Debug("close rpc client")
+	}()
+	return
+}
 
-// 	listener, err := net.Listen("tcp", ":1234")
-// 	if err != nil {
-// 		fmt.Println("Listen error:", err)
-// 		return
-// 	}
+func (r *BaseRpc) InitServer() (err error) {
+	r.listener, err = net.Listen(r.serverConn.network, r.serverConn.address)
+	if err != nil {
+		log.Debug("Listen error:", err)
+		return err
+	}
+	log.Info("RPC Server is listening on port %s...", r.serverConn.address)
+	go r.serveConn()
+	go func() {
+		defer r.listener.Close()
+		<-r.ctx.Done()
+		log.Debug("close rpc listener")
+	}()
+	return
+}
 
-// 	fmt.Println("RPC Server is listening on port 1234...")
-// 	for {
-// 		conn, err := listener.Accept()
-// 		if err != nil {
-// 			fmt.Println("Accept error:", err)
-// 			continue
-// 		}
-
-// 		go rpc.ServeConn(conn)
-// 	}
-// }
+func (r *BaseRpc) serveConn() {
+	for {
+		// waits for and returns the next connection to the listener
+		log.Debug("rpc listener waiting for connection...")
+		conn, err := r.listener.Accept()
+		if err != nil {
+			log.Debug("Accept error:%s", err)
+			return
+		}
+		log.Info("RPC Server is connected by %s...", conn.RemoteAddr())
+		go func(conn net.Conn) {
+			log.Debug("new client")
+			jsonrpc.ServeConn(conn)
+		}(conn)
+	}
+}
