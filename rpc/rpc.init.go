@@ -37,6 +37,11 @@ func WithServerAddress(address string) RpcServerOptions {
 		r.serverConn.address = address
 	}
 }
+func WithServerType(t connType) RpcServerOptions {
+	return func(r *BaseRpc) {
+		r.serverConn.connType = t
+	}
+}
 
 type RpcClientOptions func(r *BaseRpc)
 
@@ -48,6 +53,11 @@ func WithClientNetwork(network string) RpcClientOptions {
 func WithClientAddress(address string) RpcClientOptions {
 	return func(r *BaseRpc) {
 		r.clientConn.address = address
+	}
+}
+func WithClientType(t connType) RpcClientOptions {
+	return func(r *BaseRpc) {
+		r.clientConn.connType = t
 	}
 }
 
@@ -64,7 +74,10 @@ func NewClient(ctx context.Context, rpcOpts ...RpcClientOptions) (session Sessio
 	if baseRpc.clientConn.address == "" {
 		baseRpc.clientConn.address = ":80"
 	}
-	err = baseRpc.InitClient()
+	if baseRpc.clientConn.connType == "" {
+		baseRpc.clientConn.connType = JSON_HTTP
+	}
+	err = baseRpc.newClient()
 	if err != nil {
 		log.Debug("rpc init client error: %s", err.Error())
 		return
@@ -85,26 +98,13 @@ func NewServer(ctx context.Context, rpcOpts ...RpcServerOptions) (err error) {
 	if baseRpc.serverConn.address == "" {
 		baseRpc.serverConn.address = ":80"
 	}
+	if baseRpc.serverConn.connType == "" {
+		baseRpc.serverConn.connType = JSON_HTTP
+	}
 	// baseRpc := NewBaseRpc(ctx, rpcOpts...)
-	err = baseRpc.InitServer()
+	err = baseRpc.newServer()
 	if err != nil {
 		log.Debug("rpc init server error: %s", err.Error())
 	}
 	return
 }
-
-// func NewBaseRpc(ctx context.Context, rpcOpts ...RpcOptions) (r BaseRpc) {
-// 	r = BaseRpc{
-// 		ctx: ctx,
-// 	}
-// 	for _, opt := range rpcOpts {
-// 		opt(&r)
-// 	}
-// 	if r.network == "" {
-// 		r.network = "tcp"
-// 	}
-// 	if r.address == "" {
-// 		r.address = "127.0.0.1:80"
-// 	}
-// 	return
-// }
