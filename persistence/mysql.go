@@ -19,7 +19,7 @@ type MysqlConfig struct {
 
 func (c *MysqlConfig) Build() (b BaseConfig) {
 
-	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8", c.UserName, c.Password, c.Host, c.Port, c.DbName)
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&loc=Local", c.UserName, c.Password, c.Host, c.Port, c.DbName)
 	b = BaseConfig{
 		dataSource: dataSource,
 		aliasName:  c.AliasName,
